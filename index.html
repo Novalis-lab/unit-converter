@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f3ec">
+<title>くらしの単位変換</title>
+<meta name="description" content="料理の大さじ・小さじ、坪・畳・㎡、合・升・尺・寸などを入力するだけで変換できるツール">
+<style>
+  :root {
+    --bg: #f6f3ec;
+    --card: #ffffff;
+    --ink: #2b2a26;
+    --muted: #6f6b61;
+    --line: #e3ddd0;
+    --accent: #3d7a5c;
+    --accent-soft: #e4efe8;
+    --accent-ink: #ffffff;
+    --result-bg: #faf8f3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1d1b;
+      --card: #262825;
+      --ink: #ecebe6;
+      --muted: #a8a59b;
+      --line: #3a3d38;
+      --accent: #7cc19c;
+      --accent-soft: #2f3e35;
+      --accent-ink: #14201a;
+      --result-bg: #20221f;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", Meiryo, sans-serif;
+    font-size: 18px;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 0 16px 32px; }
+
+  header { padding: 20px 0 8px; }
+  h1 { font-size: 24px; margin: 0; letter-spacing: .04em; }
+  h1 span { color: var(--accent); }
+
+  nav {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--bg);
+    padding: 10px 0;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+  }
+  nav button {
+    font: inherit; font-size: 15px; font-weight: 700; line-height: 1.3;
+    min-height: 54px; padding: 6px 4px;
+    border: 2px solid var(--line); border-radius: 12px;
+    background: var(--card); color: var(--ink);
+    cursor: pointer;
+  }
+  nav button[aria-selected="true"] {
+    background: var(--accent); border-color: var(--accent); color: var(--accent-ink);
+  }
+
+  section[hidden] { display: none; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 18px 16px;
+    margin-top: 14px;
+  }
+  h2 { font-size: 19px; margin: 0 0 12px; }
+  label.lbl { display: block; font-size: 15px; color: var(--muted); margin-bottom: 6px; font-weight: 700; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .chips button {
+    font: inherit; font-size: 16px;
+    min-height: 44px; padding: 6px 14px;
+    border-radius: 999px; border: 2px solid var(--line);
+    background: var(--card); color: var(--ink); cursor: pointer;
+  }
+  .chips button[aria-pressed="true"] {
+    border-color: var(--accent); background: var(--accent-soft); font-weight: 700;
+  }
+
+  .row { display: flex; gap: 8px; }
+  input.num {
+    flex: 1 1 auto; min-width: 0;
+    font: inherit; font-size: 28px; font-weight: 700;
+    padding: 10px 14px; height: 62px;
+    border: 2px solid var(--line); border-radius: 12px;
+    background: var(--card); color: var(--ink);
+  }
+  input.num:focus, select:focus { outline: none; border-color: var(--accent); }
+  select {
+    flex: 0 0 auto;
+    font: inherit; font-size: 20px; font-weight: 700;
+    height: 62px; padding: 0 36px 0 14px;
+    border: 2px solid var(--line); border-radius: 12px;
+    background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%23888' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 12px center;
+    color: var(--ink);
+    -webkit-appearance: none; appearance: none;
+  }
+
+  ul.results { list-style: none; margin: 14px 0 0; padding: 0; }
+  ul.results li {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    padding: 12px 14px;
+    background: var(--result-bg);
+    border-radius: 10px;
+    margin-top: 6px;
+  }
+  ul.results .u { color: var(--muted); font-size: 16px; flex: 0 0 auto; }
+  ul.results .v { font-size: 24px; font-weight: 700; text-align: right; word-break: break-all; }
+  ul.results .v small { display: block; font-size: 14px; font-weight: 400; color: var(--muted); }
+  ul.results li.empty { justify-content: center; color: var(--muted); font-size: 16px; }
+
+  .note { font-size: 13px; color: var(--muted); margin: 10px 0 0; line-height: 1.5; }
+
+  footer {
+    margin-top: 24px; padding: 14px 16px;
+    border-top: 1px solid var(--line);
+    font-size: 15px; color: var(--muted); text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1><span>くらし</span>の単位変換</h1></header>
+
+  <nav role="tablist" aria-label="変換の種類">
+    <button role="tab" data-tab="cook">料理</button>
+    <button role="tab" data-tab="area">広さ</button>
+    <button role="tab" data-tab="old">昔の<br>単位</button>
+    <button role="tab" data-tab="basic">長さ・重さ<br>・温度</button>
+  </nav>
+
+  <main>
+    <!-- 料理 -->
+    <section id="tab-cook" role="tabpanel">
+      <div class="card">
+        <h2>計量スプーン・カップ ⇔ グラム</h2>
+        <label class="lbl">材料</label>
+        <div class="chips" id="foods"></div>
+        <label class="lbl" for="cook-in">分量</label>
+        <div class="row">
+          <input class="num" id="cook-in" type="text" inputmode="decimal" autocomplete="off" value="1">
+          <select id="cook-unit" aria-label="単位">
+            <option value="tbsp">大さじ</option>
+            <option value="tsp">小さじ</option>
+            <option value="cup">カップ</option>
+            <option value="g">g</option>
+          </select>
+        </div>
+        <ul class="results" id="cook-out"></ul>
+        <p class="note">大さじ＝15ml、小さじ＝5ml、カップ＝200ml で計算しています。</p>
+      </div>
+    </section>
+
+    <!-- 広さ -->
+    <section id="tab-area" role="tabpanel" hidden>
+      <div class="card" data-conv="area">
+        <h2>坪・畳・㎡</h2>
+      </div>
+    </section>
+
+    <!-- 昔の単位 -->
+    <section id="tab-old" role="tabpanel" hidden>
+      <div class="card" data-conv="rice"><h2>お米（合・升）</h2></div>
+      <div class="card" data-conv="oldlen"><h2>長さ（尺・寸など）</h2></div>
+      <div class="card" data-conv="oldwt"><h2>重さ（匁・貫など）</h2></div>
+    </section>
+
+    <!-- 長さ・重さ・温度 -->
+    <section id="tab-basic" role="tabpanel" hidden>
+      <div class="card" data-conv="len"><h2>長さ</h2></div>
+      <div class="card" data-conv="wt"><h2>重さ</h2></div>
+      <div class="card" data-conv="temp"><h2>温度</h2></div>
+    </section>
+  </main>
+
+  <footer>目安の値です。材料の状態などにより異なる場合があります</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- 共通 ---------- */
+  function parseNum(s) {
+    s = String(s)
+      .replace(/[０-９．－，]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); })
+      .replace(/[,，\s]/g, "")
+      .replace(/^ー/, "-");
+    if (s === "" || s === "-" || s === ".") return NaN;
+    return Number(s);
+  }
+  function fmt(n, digits) {
+    if (!isFinite(n)) return "—";
+    if (digits === undefined) {
+      var a = Math.abs(n);
+      digits = a >= 1000 ? 0 : a >= 100 ? 1 : a >= 1 ? 2 : 3;
+    }
+    var r = n.toLocaleString("ja-JP", { maximumFractionDigits: digits });
+    return r === "-0" ? "0" : r;
+  }
+  function li(unit, value, sub) {
+    return '<li><span class="u">' + unit + '</span><span class="v">' + value +
+      (sub ? "<small>" + sub + "</small>" : "") + "</span></li>";
+  }
+  var EMPTY = '<li class="empty">数字を入れると結果が出ます</li>';
+
+  /* 0.25, 1/3, 0.5 などのきりの良い分量に近いときは「1と1/2」のように表示 */
+  var FRACS = [[0, ""], [1/4, "1/4"], [1/3, "1/3"], [1/2, "1/2"], [2/3, "2/3"], [3/4, "3/4"], [1, ""]];
+  function friendly(n) {
+    if (!(n > 0) || n > 50) return "";
+    var whole = Math.floor(n), rest = n - whole, best = null;
+    FRACS.forEach(function (f) {
+      if (Math.abs(rest - f[0]) < 0.04 && (!best || Math.abs(rest - f[0]) < Math.abs(rest - best[0]))) best = f;
+    });
+    if (!best) return "";
+    if (best[0] === 1) { whole += 1; best = [0, ""]; }
+    if (whole === 0 && !best[1]) return "";
+    if (!best[1]) return whole + "杯";
+    return (whole ? whole + "と" : "") + best[1] + "杯";
+  }
+
+  /* ---------- 料理 ---------- */
+  // 大さじ(15ml)・小さじ(5ml)・カップ(200ml)の重さ(g)。一般的な目安表の値
+  var FOODS = [
+    { name: "水",       tsp: 5, tbsp: 15, cup: 200 },
+    { name: "砂糖",     tsp: 3, tbsp: 9,  cup: 130, note: "上白糖" },
+    { name: "塩",       tsp: 6, tbsp: 18, cup: 240, note: "精製塩" },
+    { name: "しょうゆ", tsp: 6, tbsp: 18, cup: 230 },
+    { name: "みそ",     tsp: 6, tbsp: 18, cup: 230 },
+    { name: "油",       tsp: 4, tbsp: 12, cup: 180 },
+    { name: "小麦粉",   tsp: 3, tbsp: 9,  cup: 110, note: "薄力粉" },
+    { name: "バター",   tsp: 4, tbsp: 12, cup: 180 },
+    { name: "みりん",   tsp: 6, tbsp: 18, cup: 230 },
+    { name: "酒",       tsp: 5, tbsp: 15, cup: 200 },
+    { name: "酢",       tsp: 5, tbsp: 15, cup: 200 },
+    { name: "片栗粉",   tsp: 3, tbsp: 9,  cup: 130 },
+    { name: "はちみつ", tsp: 7, tbsp: 21, cup: 280 },
+    { name: "牛乳",     tsp: 5, tbsp: 15, cup: 210 },
+    { name: "マヨネーズ", tsp: 4, tbsp: 12, cup: 190 },
+    { name: "ケチャップ", tsp: 5, tbsp: 15, cup: 230 }
+  ];
+  var UNIT_LABEL = { tbsp: "大さじ", tsp: "小さじ", cup: "カップ", g: "g" };
+  var foodIdx = 0;
+  var foodsEl = document.getElementById("foods");
+  var cookIn = document.getElementById("cook-in");
+  var cookUnit = document.getElementById("cook-unit");
+  var cookOut = document.getElementById("cook-out");
+
+  FOODS.forEach(function (f, i) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.textContent = f.name;
+    b.setAttribute("aria-pressed", i === 0 ? "true" : "false");
+    b.addEventListener("click", function () {
+      foodIdx = i;
+      Array.prototype.forEach.call(foodsEl.children, function (c, j) {
+        c.setAttribute("aria-pressed", j === i ? "true" : "false");
+      });
+      renderCook();
+    });
+    foodsEl.appendChild(b);
+  });
+
+  function renderCook() {
+    var f = FOODS[foodIdx];
+    var v = parseNum(cookIn.value);
+    if (isNaN(v)) { cookOut.innerHTML = EMPTY; return; }
+    var u = cookUnit.value;
+    var grams = u === "g" ? v : v * f[u];
+    var html = "";
+    if (u !== "g") html += li("グラム", fmt(grams, 1) + " g");
+    ["tbsp", "tsp", "cup"].forEach(function (k) {
+      if (k === u) return;
+      var n = grams / f[k];
+      var fr = friendly(n);
+      html += li(UNIT_LABEL[k], fmt(n, 2) + " 杯", fr && fr !== fmt(n, 2) + "杯" ? "約 " + UNIT_LABEL[k] + fr : "");
+    });
+    var ml = grams / f.tbsp * 15;
+    html += li("体積", fmt(ml, 1) + " ml");
+    if (f.note) html += '<li class="empty">' + f.name + "は" + f.note + "の値です</li>";
+    cookOut.innerHTML = html;
+  }
+  cookIn.addEventListener("input", renderCook);
+  cookUnit.addEventListener("change", renderCook);
+
+  /* ---------- 汎用の変換カード ---------- */
+  // factor: 基準単位あたりの量（すべて基準単位に換算してから変換）
+  var CONVS = {
+    area: {
+      base: "㎡", def: "tsubo", value: 1,
+      units: [
+        { id: "tsubo", label: "坪", f: 400 / 121 },
+        { id: "jo",    label: "畳", f: 1.62 },
+        { id: "m2",    label: "㎡", f: 1 }
+      ],
+      note: "※畳は不動産広告の表示基準（1畳＝1.62㎡）で計算しています。1坪＝約3.31㎡（400/121㎡）。実際の畳の大きさは地域や建物によって異なります。"
+    },
+    rice: {
+      def: "go", value: 3,
+      units: [
+        { id: "go",  label: "合", f: 2401 / 13310 },  // L
+        { id: "sho", label: "升", f: 24010 / 13310 },
+        { id: "to",  label: "斗", f: 240100 / 13310 },
+        { id: "L",   label: "L",  f: 1 },
+        { id: "ml",  label: "ml", f: 0.001 }
+      ],
+      extra: function (L) {
+        var go = L / (2401 / 13310);
+        return li("お米の重さ", fmt(go * 150, 0) + " g", "1合＝約150gで計算") +
+               li("炊き上がり", "約 " + fmt(go * 330, 0) + " g", "1合＝約330g・茶碗 約" + fmt(go * 2.2, 1) + "杯分");
+      },
+      note: "1合＝約180ml、1升＝10合＝約1.8L、1斗＝10升。お米1合は約150g。"
+    },
+    oldlen: {
+      def: "shaku", value: 1,
+      units: [
+        { id: "bu",    label: "分", f: 1 / 330 },   // m
+        { id: "sun",   label: "寸", f: 1 / 33 },
+        { id: "shaku", label: "尺", f: 10 / 33 },
+        { id: "ken",   label: "間", f: 60 / 33 },
+        { id: "jo",    label: "丈", f: 100 / 33 },
+        { id: "ri",    label: "里", f: 12960 / 33 },
+        { id: "cm",    label: "cm", f: 0.01 },
+        { id: "m",     label: "m",  f: 1 }
+      ],
+      note: "1尺＝10寸＝約30.3cm、1寸＝10分、1間＝6尺、1丈＝10尺、1里＝36町＝約3.93km（曲尺）。"
+    },
+    oldwt: {
+      def: "monme", value: 1,
+      units: [
+        { id: "monme", label: "匁", f: 3.75 },   // g
+        { id: "kin",   label: "斤", f: 600 },
+        { id: "kan",   label: "貫", f: 3750 },
+        { id: "g",     label: "g",  f: 1 },
+        { id: "kg",    label: "kg", f: 1000 }
+      ],
+      note: "1匁＝3.75g、1斤＝160匁＝600g、1貫＝1000匁＝3.75kg。"
+    },
+    len: {
+      def: "cm", value: 1,
+      units: [
+        { id: "mm", label: "mm", f: 0.001 },
+        { id: "cm", label: "cm", f: 0.01 },
+        { id: "m",  label: "m",  f: 1 },
+        { id: "km", label: "km", f: 1000 },
+        { id: "in", label: "インチ", f: 0.0254 },
+        { id: "ft", label: "フィート", f: 0.3048 },
+        { id: "yd", label: "ヤード", f: 0.9144 },
+        { id: "mi", label: "マイル", f: 1609.344 }
+      ]
+    },
+    wt: {
+      def: "g", value: 100,
+      units: [
+        { id: "mg", label: "mg", f: 0.001 },
+        { id: "g",  label: "g",  f: 1 },
+        { id: "kg", label: "kg", f: 1000 },
+        { id: "t",  label: "t",  f: 1e6 },
+        { id: "oz", label: "オンス", f: 28.349523125 },
+        { id: "lb", label: "ポンド", f: 453.59237 }
+      ]
+    },
+    temp: {
+      def: "c", value: 180,
+      units: [
+        { id: "c", label: "℃（摂氏）" },
+        { id: "f", label: "℉（華氏）" }
+      ],
+      convert: function (v, from) {
+        var c = from === "c" ? v : (v - 32) * 5 / 9;
+        return { c: c, f: c * 9 / 5 + 32 };
+      },
+      note: "オーブン温度の確認などに。華氏 350℉ ≒ 摂氏 177℃。"
+    }
+  };
+
+  function setupConv(card) {
+    var key = card.getAttribute("data-conv");
+    var c = CONVS[key];
+    var id = "in-" + key;
+    var opts = c.units.map(function (u) {
+      return '<option value="' + u.id + '"' + (u.id === c.def ? " selected" : "") + ">" + u.label + "</option>";
+    }).join("");
+    card.insertAdjacentHTML("beforeend",
+      '<div class="row"><input class="num" id="' + id + '" type="text" inputmode="decimal" autocomplete="off" value="' + c.value + '" aria-label="数値">' +
+      '<select aria-label="単位">' + opts + "</select></div>" +
+      '<ul class="results"></ul>' + (c.note ? '<p class="note">' + c.note + "</p>" : ""));
+    var input = card.querySelector("input");
+    var sel = card.querySelector("select");
+    var out = card.querySelector("ul");
+
+    function render() {
+      var v = parseNum(input.value);
+      if (isNaN(v)) { out.innerHTML = EMPTY; return; }
+      var from = sel.value, html = "";
+      if (c.convert) {
+        var r = c.convert(v, from);
+        c.units.forEach(function (u) { if (u.id !== from) html += li(u.label, fmt(r[u.id], 1)); });
+      } else {
+        var fu = c.units.filter(function (u) { return u.id === from; })[0];
+        var base = v * fu.f;
+        c.units.forEach(function (u) {
+          if (u.id !== from) html += li(u.label, fmt(base / u.f));
+        });
+        if (c.extra) html += c.extra(base);
+      }
+      out.innerHTML = html;
+    }
+    input.addEventListener("input", render);
+    sel.addEventListener("change", render);
+    render();
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("[data-conv]"), setupConv);
+
+  /* ---------- タブ ---------- */
+  var tabs = document.querySelectorAll("nav button");
+  function show(name) {
+    Array.prototype.forEach.call(tabs, function (t) {
+      var on = t.getAttribute("data-tab") === name;
+      t.setAttribute("aria-selected", on ? "true" : "false");
+      document.getElementById("tab-" + t.getAttribute("data-tab")).hidden = !on;
+    });
+    try { localStorage.setItem("kurashi-tab", name); } catch (e) {}
+  }
+  Array.prototype.forEach.call(tabs, function (t) {
+    t.addEventListener("click", function () { show(t.getAttribute("data-tab")); });
+  });
+  var saved = null;
+  try { saved = localStorage.getItem("kurashi-tab"); } catch (e) {}
+  show(saved && document.getElementById("tab-" + saved) ? saved : "cook");
+
+  renderCook();
+})();
+</script>
+</body>
+</html>
