@@ -3,27 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#07080f">
+<meta name="theme-color" content="#0b0b0d">
 <title>くらしの単位変換｜novalis</title>
 <meta name="description" content="料理の大さじ・小さじ、坪・畳・㎡、合・升・尺・寸などを入力するだけで変換できるツール">
 <link rel="icon" href="https://novalis-lab.github.io/icon.svg" type="image/svg+xml">
 <link rel="icon" href="https://novalis-lab.github.io/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="https://novalis-lab.github.io/apple-touch-icon.png">
 <style>
+  /* 色はトップページ（novalis）とそろえています */
   :root {
-    --bg: #07080f;
-    --text: #f1f2f8;
-    --muted: #9097b0;
-    --line: rgba(255, 255, 255, 0.09);
-    --line-strong: rgba(255, 255, 255, 0.16);
-    --glass: rgba(255, 255, 255, 0.045);
-    --glass-strong: rgba(255, 255, 255, 0.08);
-    --mint: #5ce0a8;
-    --cyan: #22d3ee;
-    --violet: #7c6cff;
-    --grad: linear-gradient(100deg, var(--mint), var(--cyan) 55%, var(--violet));
-    --font: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", Meiryo, sans-serif;
-    --font-en: "SF Pro Display", "Helvetica Neue", "Segoe UI", Arial, sans-serif;
+    --bg: #0b0b0d;
+    --bg-2: #141417;
+    --text: #f2f0ea;
+    --muted: #8b8a86;
+    --line: rgba(255, 255, 255, 0.12);
+    --accent: #6f9fd4;              /* 差し色（落ち着いた青） */
+    --accent-rgb: 111, 159, 212;    /* 光の色（差し色と同じ色を数字で） */
+    --accent-ink: #0b0b0d;
+    --font: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", Meiryo, sans-serif;
+    --font-en: "Helvetica Neue", "Arial Black", Arial, sans-serif;
   }
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; color-scheme: dark; }
@@ -37,162 +35,145 @@
     line-height: 1.6;
     overflow-x: hidden;
   }
+  ::selection { background: var(--accent); color: var(--accent-ink); }
 
-  /* ---------- 背景（光と格子） ---------- */
-  .bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
-  .orb { position: absolute; border-radius: 50%; filter: blur(90px); }
-  .orb-1 { width: 460px; height: 460px; background: var(--mint); opacity: .32; top: -200px; left: -160px; animation: drift-1 18s ease-in-out infinite; }
-  .orb-2 { width: 400px; height: 400px; background: var(--violet); opacity: .38; top: 30%; right: -200px; animation: drift-2 22s ease-in-out infinite; }
-  .orb-3 { width: 340px; height: 340px; background: var(--cyan); opacity: .2; bottom: -160px; left: 10%; animation: drift-3 26s ease-in-out infinite; }
-  @keyframes drift-1 { 50% { transform: translate(30vw, 20vh) scale(1.15); } }
-  @keyframes drift-2 { 50% { transform: translate(-25vw, 25vh) scale(.9); } }
-  @keyframes drift-3 { 50% { transform: translate(25vw, -30vh) scale(1.1); } }
-  .grid {
-    position: absolute; inset: 0;
-    background-image:
-      linear-gradient(var(--line) 1px, transparent 1px),
-      linear-gradient(90deg, var(--line) 1px, transparent 1px);
-    background-size: 44px 44px;
-    -webkit-mask-image: radial-gradient(ellipse at 50% 0%, #000 15%, transparent 70%);
-            mask-image: radial-gradient(ellipse at 50% 0%, #000 15%, transparent 70%);
+  /* ---------- 背景（縦のガイド線と斜めのライン） ---------- */
+  .bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+  .bg-cols {
+    position: absolute; inset: 0; max-width: 592px; margin: 0 auto;
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
   }
-  @media (prefers-reduced-motion: reduce) { .orb { animation: none; } }
+  .bg-slash {
+    position: absolute; top: -10%; right: -30%; width: 90%; height: 120%;
+    background: repeating-linear-gradient(-55deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 14px);
+    -webkit-mask-image: linear-gradient(200deg, #000 10%, transparent 55%);
+            mask-image: linear-gradient(200deg, #000 10%, transparent 55%);
+  }
 
-  .wrap { max-width: 560px; margin: 0 auto; padding: 0 16px calc(32px + env(safe-area-inset-bottom)); }
+  .wrap { max-width: 592px; margin: 0 auto; padding: 0 16px calc(24px + env(safe-area-inset-bottom)); }
 
   /* ---------- ヘッダー ---------- */
-  header { padding: 22px 2px 6px; }
-  .back {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-family: var(--font-en); font-size: 12px; font-weight: 700; letter-spacing: .22em;
-    color: var(--muted); text-decoration: none;
-    padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px;
-    background: var(--glass);
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--line);
+    font-family: var(--font-en); font-size: 11px; font-weight: 700; letter-spacing: .22em;
   }
-  .back:hover { color: var(--text); border-color: var(--line-strong); }
-  .eyebrow {
-    margin: 22px 0 6px;
-    font-family: var(--font-en); font-size: 12px; font-weight: 800; letter-spacing: .32em;
-    background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent;
+  .logo { display: inline-flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; font-weight: 900; font-size: 13px; letter-spacing: .18em; }
+  .logo-mark { width: 11px; height: 11px; background: var(--accent); transform: rotate(45deg); }
+  .logo:hover { color: var(--accent); }
+  .topbar-meta { color: var(--muted); }
+  .kicker {
+    display: flex; align-items: center; gap: 12px;
+    margin: 30px 0 10px;
+    font-family: var(--font-en); font-size: 11px; font-weight: 700; letter-spacing: .3em; color: var(--muted);
   }
-  h1 { margin: 0; font-size: 30px; font-weight: 900; letter-spacing: .06em; line-height: 1.25; }
+  .kicker::before { content: ""; width: 32px; height: 1px; background: var(--accent); }
+  h1 { margin: 0; font-size: clamp(30px, 9vw, 40px); font-weight: 900; line-height: 1.2; letter-spacing: .02em; }
+  h1 .u-line { background: linear-gradient(transparent 84%, var(--accent) 84%, var(--accent) 94%, transparent 94%); }
 
   /* ---------- タブ ---------- */
   nav {
     position: sticky; top: 0; z-index: 10;
-    margin: 18px 0 0; padding: 10px 0;
+    margin: 24px -16px 0; padding: 10px 16px;
+    background: rgba(11, 11, 13, .88);
+    -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
   }
-  .tabs {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
-    padding: 4px; border-radius: 18px;
-    background: rgba(16, 18, 30, .78); border: 1px solid var(--line-strong);
-    -webkit-backdrop-filter: blur(14px) saturate(140%);
-            backdrop-filter: blur(14px) saturate(140%);
-    box-shadow: 0 12px 30px -16px rgba(0, 0, 0, .9);
-  }
+  .tabs { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); }
   .tabs button {
     font: inherit; color: var(--muted); cursor: pointer;
-    min-height: 58px; padding: 6px 2px;
-    border: 0; border-radius: 12px; background: transparent;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
-    transition: color .2s, background .2s;
+    min-height: 60px; padding: 6px 2px;
+    border: 0; border-left: 1px solid var(--line); border-radius: 0; background: transparent;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    transition: color .2s, background .2s, box-shadow .3s;
   }
+  .tabs button:first-child { border-left: 0; }
   .tabs button b { text-align: center; word-break: keep-all; font-size: 14px; font-weight: 800; line-height: 1.25; }
-  .tabs button i { font-style: normal; font-family: var(--font-en); font-size: 9.5px; font-weight: 700; letter-spacing: .18em; opacity: .7; }
+  .tabs button i { font-style: normal; font-family: var(--font-en); font-size: 9px; font-weight: 700; letter-spacing: .2em; opacity: .75; }
+  .tabs button:hover { color: var(--text); }
   .tabs button[aria-selected="true"] {
-    color: #06140e;
-    background: var(--grad);
-    box-shadow: 0 8px 24px -10px rgba(92, 224, 168, .8);
+    position: relative; z-index: 1;
+    color: var(--accent-ink); background: var(--accent);
+    box-shadow: 0 0 18px 2px rgba(var(--accent-rgb), .5), 0 0 44px 6px rgba(var(--accent-rgb), .22);
   }
-  .tabs button[aria-selected="true"] i { opacity: .75; }
 
   /* ---------- カード ---------- */
   section[hidden] { display: none; }
-  section:not([hidden]) .card { animation: rise .35s ease both; }
-  section:not([hidden]) .card:nth-child(2) { animation-delay: .05s; }
-  section:not([hidden]) .card:nth-child(3) { animation-delay: .1s; }
-  @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
-  @media (prefers-reduced-motion: reduce) { section:not([hidden]) .card { animation: none; } }
+  section { counter-reset: card; }
+  section:not([hidden]) .card { animation: rise .45s cubic-bezier(.2, .7, .2, 1) both; }
+  section:not([hidden]) .card:nth-child(2) { animation-delay: .06s; }
+  section:not([hidden]) .card:nth-child(3) { animation-delay: .12s; }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px); } }
 
   .card {
-    position: relative;
-    margin-top: 16px; padding: 20px 16px 18px;
-    border-radius: 22px;
-    background: linear-gradient(180deg, rgba(255,255,255,.065), rgba(255,255,255,.025));
+    counter-increment: card;
+    margin-top: 20px; padding: 22px 18px 20px;
+    background: rgba(255, 255, 255, .025);
     border: 1px solid var(--line);
-    -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
-    box-shadow: 0 20px 50px -30px rgba(0, 0, 0, .9);
+    border-top: 1px solid var(--text);
   }
-  .card::before {
-    content: ""; position: absolute; left: 20px; right: 20px; top: -1px; height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(92, 224, 168, .7), transparent);
-  }
-  h2 {
-    display: flex; align-items: center; gap: 10px;
-    margin: 0 0 16px; font-size: 19px; font-weight: 800; letter-spacing: .03em; word-break: keep-all;
-  }
+  h2 { margin: 0 0 18px; font-size: 20px; font-weight: 900; letter-spacing: .02em; word-break: keep-all; }
   h2::before {
-    content: ""; width: 4px; height: 18px; border-radius: 4px; flex: 0 0 auto;
-    background: var(--grad);
+    content: counter(card, decimal-leading-zero) " /";
+    display: block; margin-bottom: 4px;
+    font-family: var(--font-en); font-size: 11px; font-weight: 700; letter-spacing: .2em; color: var(--accent);
   }
   label.lbl {
     display: block; margin: 0 0 8px;
-    font-size: 13px; font-weight: 700; letter-spacing: .12em; color: var(--muted);
+    font-family: var(--font); font-size: 12px; font-weight: 700; letter-spacing: .18em; color: var(--muted);
   }
 
   /* 材料のボタン */
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
   .chips button {
     font: inherit; font-size: 16px; font-weight: 700; color: var(--text); cursor: pointer;
-    min-height: 44px; padding: 6px 15px;
-    border-radius: 999px; border: 1px solid var(--line-strong);
-    background: var(--glass);
-    transition: background .15s, border-color .15s, color .15s;
+    min-height: 44px; padding: 6px 14px;
+    border-radius: 0; border: 1px solid var(--line);
+    background: transparent;
+    transition: background .15s, border-color .15s, color .15s, box-shadow .2s;
   }
+  .chips button:hover { border-color: var(--accent); }
   .chips button[aria-pressed="true"] {
-    color: var(--mint);
-    border-color: var(--mint);
-    background: rgba(92, 224, 168, .12);
-    box-shadow: 0 0 0 3px rgba(92, 224, 168, .12), 0 0 18px -4px rgba(92, 224, 168, .6);
+    color: var(--accent-ink); background: var(--accent); border-color: var(--accent);
+    box-shadow: 0 0 14px 1px rgba(var(--accent-rgb), .45);
   }
 
   /* 入力欄 */
   .row { display: flex; gap: 8px; }
   input.num, select {
     height: 66px;
-    border: 1px solid var(--line-strong); border-radius: 16px;
-    background: rgba(0, 0, 0, .35); color: var(--text);
-    transition: border-color .15s, box-shadow .15s;
+    border: 1px solid rgba(255, 255, 255, .2); border-radius: 0;
+    background: #08080a; color: var(--text);
+    transition: border-color .15s, box-shadow .2s;
   }
   input.num {
     flex: 1 1 auto; min-width: 0;
     font-family: var(--font-en); font-size: 32px; font-weight: 700;
-    font-variant-numeric: tabular-nums; letter-spacing: .01em;
+    font-variant-numeric: tabular-nums;
     padding: 0 16px;
-    caret-color: var(--mint);
+    caret-color: var(--accent);
   }
   select {
     flex: 0 0 auto;
     font: inherit; font-size: 19px; font-weight: 800;
-    padding: 0 38px 0 16px;
-    background: rgba(0, 0, 0, .35) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%235ce0a8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center;
+    padding: 0 40px 0 16px;
+    background: #08080a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%236f9fd4' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 14px center;
     -webkit-appearance: none; appearance: none;
   }
-  select option { background: #10121c; color: var(--text); }
+  select option { background: #141417; color: var(--text); }
   input.num:focus, select:focus {
-    outline: none; border-color: var(--mint);
-    box-shadow: 0 0 0 4px rgba(92, 224, 168, .15);
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 0 20px 2px rgba(var(--accent-rgb), .35);
   }
 
-  /* 結果 */
-  ul.results { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 6px; }
+  /* 結果（1行ずつのリスト） */
+  ul.results { list-style: none; margin: 18px 0 0; padding: 0; border-top: 1px solid var(--line); }
   ul.results li {
     display: flex; justify-content: space-between; align-items: center; gap: 12px;
-    padding: 12px 16px;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, .035);
-    border: 1px solid transparent;
+    padding: 13px 4px;
+    border-bottom: 1px solid var(--line);
   }
   ul.results .u { flex: 0 0 auto; font-size: 15px; font-weight: 700; color: var(--muted); }
   ul.results .v {
@@ -201,45 +182,69 @@
     text-align: right; word-break: break-all; line-height: 1.3;
   }
   ul.results .v small { display: block; font-family: var(--font); font-size: 13px; font-weight: 500; color: var(--muted); }
-  /* いちばん上の結果を目立たせる */
+  /* いちばん上の結果を、差し色の帯で目立たせる */
   ul.results li:first-child:not(.empty) {
-    padding: 16px;
-    background: linear-gradient(110deg, rgba(92, 224, 168, .16), rgba(34, 211, 238, .08) 60%, rgba(124, 108, 255, .1));
-    border-color: rgba(92, 224, 168, .35);
+    margin: 10px 0 4px; padding: 16px;
+    border: 0;
+    background: var(--accent); color: var(--accent-ink);
+    box-shadow: 0 0 20px 2px rgba(var(--accent-rgb), .45), 0 0 54px 8px rgba(var(--accent-rgb), .2);
+    animation: glow 2.8s ease-in-out infinite;
   }
-  ul.results li:first-child:not(.empty) .u { color: var(--mint); }
-  ul.results li:first-child:not(.empty) .v { font-size: 32px; }
+  @keyframes glow {
+    50% { box-shadow: 0 0 28px 4px rgba(var(--accent-rgb), .65), 0 0 76px 14px rgba(var(--accent-rgb), .3); }
+  }
+  ul.results li:first-child:not(.empty) .u { color: rgba(11, 11, 13, .7); }
+  ul.results li:first-child:not(.empty) .v { font-size: 34px; }
+  ul.results li:first-child:not(.empty) .v small { color: rgba(11, 11, 13, .7); }
   ul.results li.empty {
     justify-content: center; text-align: center;
     font-size: 14px; color: var(--muted);
-    background: transparent; border: 1px dashed var(--line-strong);
   }
 
   .note { margin: 14px 2px 0; font-size: 12.5px; line-height: 1.6; color: var(--muted); }
 
+  /* ---------- フッター ---------- */
   footer {
-    margin-top: 28px; padding: 16px;
-    border-radius: 16px; border: 1px solid var(--line);
-    background: var(--glass);
+    margin-top: 32px; padding: 16px;
+    border: 1px solid var(--line);
     font-size: 14px; color: var(--muted); text-align: center;
   }
-  .credit {
-    display: block; margin-top: 16px; text-align: center;
-    font-family: var(--font-en); font-size: 11px; font-weight: 700; letter-spacing: .3em;
-    color: var(--muted); text-decoration: none; opacity: .7;
+  .site-bottom {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 40px; padding-top: 18px;
+    border-top: 1px solid var(--line);
+    font-family: var(--font-en); font-size: 10px; font-weight: 700; letter-spacing: .2em; color: var(--muted);
+  }
+  .site-bottom a { color: inherit; text-decoration: none; }
+  .site-bottom a:hover { color: var(--accent); }
+  .footer-logo {
+    margin: 8px 0 0;
+    font-family: var(--font-en); font-weight: 900;
+    font-size: clamp(52px, 16.5vw, 104px);
+    line-height: .85; letter-spacing: -.04em; text-align: center; white-space: nowrap;
+    color: transparent;
+    background: repeating-linear-gradient(-55deg, rgba(255, 255, 255, .2) 0 2px, transparent 2px 7px);
+    -webkit-background-clip: text; background-clip: text;
+    user-select: none;
+  }
+
+  /* 動きを減らす設定の人には、アニメーションを止める */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
   }
 </style>
 </head>
 <body>
-<div class="bg" aria-hidden="true">
-  <span class="orb orb-1"></span><span class="orb orb-2"></span><span class="orb orb-3"></span><span class="grid"></span>
-</div>
+<div class="bg" aria-hidden="true"><span class="bg-cols"></span><span class="bg-slash"></span></div>
 
 <div class="wrap">
   <header>
-    <a class="back" href="https://novalis-lab.github.io/">← NOVALIS</a>
-    <p class="eyebrow">UNIT CONVERTER</p>
-    <h1>くらしの単位変換</h1>
+    <div class="topbar">
+      <a class="logo" href="https://novalis-lab.github.io/"><span class="logo-mark" aria-hidden="true"></span>NOVALIS</a>
+      <span class="topbar-meta">FREE WEB TOOL</span>
+    </div>
+    <p class="kicker">UNIT CONVERTER</p>
+    <h1><span class="u-line">くらし</span>の単位変換</h1>
   </header>
 
   <nav aria-label="変換の種類">
@@ -296,7 +301,11 @@
   </main>
 
   <footer>目安の値です。<br>材料の状態などにより異なる場合があります</footer>
-  <a class="credit" href="https://novalis-lab.github.io/">NOVALIS</a>
+  <div class="site-bottom">
+    <a href="https://novalis-lab.github.io/">← ほかのツールを見る</a>
+    <span>© NOVALIS</span>
+  </div>
+  <p class="footer-logo" aria-hidden="true">NOVALIS</p>
 </div>
 <script>
 (function () {
