@@ -12,7 +12,7 @@
 <!-- 全ページ共通（日本語フォント Zen Maru Gothic・角の丸み） -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://novalis-lab.github.io/common.css?v=20261113a">
+<link rel="stylesheet" href="https://novalis-lab.github.io/common.css?v=20261113b">
 <style>
   /* 色はトップページ（novalis）とそろえています */
   :root {
@@ -24,8 +24,7 @@
     --accent: #6f9fd4;              /* 差し色（落ち着いた青） */
     --accent-rgb: 111, 159, 212;    /* 光の色（差し色と同じ色を数字で） */
     --accent-ink: #0b0b0d;
-    /* 日本語フォント --font と角の丸み --radius は common.css（novalis共通）で管理 */
-    --font-en: "Helvetica Neue", "Arial Black", Arial, sans-serif;
+    /* フォント（--font・--font-en）と角の丸み（--radius）は common.css（novalis共通）で管理 */
   }
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; color-scheme: dark; }
@@ -266,7 +265,7 @@
   .footer-logo {
     margin: 8px 0 0;
     font-family: var(--font-en); font-weight: 900;
-    font-size: clamp(52px, 16.5vw, 104px);
+    font-size: clamp(44px, 13.5vw, 96px);
     line-height: .85; letter-spacing: -.04em; text-align: center; white-space: nowrap;
     color: transparent;
     background: repeating-linear-gradient(-55deg, rgba(255, 255, 255, .2) 0 2px, transparent 2px 7px);
