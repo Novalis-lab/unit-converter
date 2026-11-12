@@ -9,6 +9,10 @@
 <link rel="icon" href="https://novalis-lab.github.io/icon.svg" type="image/svg+xml">
 <link rel="icon" href="https://novalis-lab.github.io/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="https://novalis-lab.github.io/apple-touch-icon.png">
+<!-- 全ページ共通（日本語フォント Zen Maru Gothic・角の丸み） -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://novalis-lab.github.io/common.css?v=20261113a">
 <style>
   /* 色はトップページ（novalis）とそろえています */
   :root {
@@ -20,7 +24,7 @@
     --accent: #6f9fd4;              /* 差し色（落ち着いた青） */
     --accent-rgb: 111, 159, 212;    /* 光の色（差し色と同じ色を数字で） */
     --accent-ink: #0b0b0d;
-    --font: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", Meiryo, sans-serif;
+    /* 日本語フォント --font と角の丸み --radius は common.css（novalis共通）で管理 */
     --font-en: "Helvetica Neue", "Arial Black", Arial, sans-serif;
   }
   * { box-sizing: border-box; }
@@ -269,6 +273,17 @@
     -webkit-background-clip: text; background-clip: text;
     user-select: none;
   }
+
+  /* ---------- 角の丸み（common.css の --radius で一括管理） ---------- */
+  .card,
+  .chips button,
+  input.num, select,
+  ul.results li:first-child:not(.empty),
+  footer,
+  .more,
+  .tabs { border-radius: var(--radius, 8px); }
+  .tabs button:first-child { border-radius: var(--radius, 8px) 0 0 var(--radius, 8px); }
+  .tabs button:last-child  { border-radius: 0 var(--radius, 8px) var(--radius, 8px) 0; }
 
   /* 動きを減らす設定の人には、アニメーションを止める */
   @media (prefers-reduced-motion: reduce) {
